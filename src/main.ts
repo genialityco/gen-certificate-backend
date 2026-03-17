@@ -7,14 +7,16 @@ async function bootstrap() {
     bodyParser: true,
   });
 
-  const corsOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000')
-    .split(',')
+  const corsOrigins = process.env.CORS_ORIGINS
+    ?.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
   // Enable CORS
   app.enableCors({
-    origin: corsOrigins,
+    // If CORS_ORIGINS is not provided, allow requests from any origin.
+    // To restrict origins, set CORS_ORIGINS="https://a.com,https://b.com"
+    origin: corsOrigins?.length ? corsOrigins : true,
     credentials: true,
   });
 
