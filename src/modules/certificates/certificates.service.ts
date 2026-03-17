@@ -67,19 +67,10 @@ export class CertificatesService {
     return field.defaultValue ?? '';
   }
 
-  private shouldUsePercentageCoordinates(
-    fields: Array<{ posX?: number; posY?: number }>,
-  ): boolean {
-    return !fields.some((field) => (field.posX ?? 0) > 100 || (field.posY ?? 0) > 100);
-  }
-
   private toAbsoluteCoordinate(
     value: number | undefined,
-    size: number,
-    usePercentageCoordinates: boolean,
   ): number {
-    const safeValue = value ?? 0;
-    return usePercentageCoordinates ? (safeValue / 100) * size : safeValue;
+    return value ?? 0;
   }
 
   private toSvgCertificate(
@@ -101,22 +92,12 @@ export class CertificatesService {
     }>,
     data: Record<string, unknown>,
   ): string {
-    const usePercentageCoordinates = this.shouldUsePercentageCoordinates(fields);
-
     const textElements = fields
       .map((field) => {
         const rawValue = this.getFieldValue(field, data);
         const textValue = this.escapeXml(String(rawValue));
-        const x = this.toAbsoluteCoordinate(
-          field.posX,
-          width,
-          usePercentageCoordinates,
-        );
-        const y = this.toAbsoluteCoordinate(
-          field.posY,
-          height,
-          usePercentageCoordinates,
-        );
+        const x = this.toAbsoluteCoordinate(field.posX);
+        const y = this.toAbsoluteCoordinate(field.posY);
         const fontSize = field.fontSize ?? 16;
         const fontFamily = this.escapeXml(field.fontFamily ?? 'Arial');
         const fill = this.escapeXml(field.fontColor ?? '#000000');
@@ -156,22 +137,12 @@ export class CertificatesService {
     }>,
     data: Record<string, unknown>,
   ): string {
-    const usePercentageCoordinates = this.shouldUsePercentageCoordinates(fields);
-
     const textElements = fields
       .map((field) => {
         const rawValue = this.getFieldValue(field, data);
         const textValue = this.escapeXml(String(rawValue));
-        const x = this.toAbsoluteCoordinate(
-          field.posX,
-          width,
-          usePercentageCoordinates,
-        );
-        const y = this.toAbsoluteCoordinate(
-          field.posY,
-          height,
-          usePercentageCoordinates,
-        );
+        const x = this.toAbsoluteCoordinate(field.posX);
+        const y = this.toAbsoluteCoordinate(field.posY);
         const fontSize = field.fontSize ?? 16;
         const fontFamily = this.escapeXml(field.fontFamily ?? 'Arial');
         const fill = this.escapeXml(field.fontColor ?? '#000000');
