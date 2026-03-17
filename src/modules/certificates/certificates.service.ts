@@ -36,12 +36,59 @@ export class CertificatesService {
       .replace(/'/g, '&apos;');
   }
 
+  private normalizeFieldKey(value: string): string {
+    return value.trim().toLowerCase().replace(/[\s_-]+/g, '');
+  }
+
+  private getFieldValue(
+    field: { name?: string; label?: string; defaultValue?: string | null },
+    data: Record<string, unknown>,
+  ): unknown {
+    const key = field.name?.trim();
+    if (key && Object.prototype.hasOwnProperty.call(data, key)) {
+      return data[key];
+    }
+
+    const normalizedMap = new Map<string, unknown>();
+    for (const [dataKey, value] of Object.entries(data)) {
+      normalizedMap.set(this.normalizeFieldKey(dataKey), value);
+    }
+
+    const candidates = [field.name, field.label]
+      .filter((candidate): candidate is string => Boolean(candidate?.trim()))
+      .map((candidate) => this.normalizeFieldKey(candidate));
+
+    for (const candidate of candidates) {
+      if (normalizedMap.has(candidate)) {
+        return normalizedMap.get(candidate);
+      }
+    }
+
+    return field.defaultValue ?? '';
+  }
+
+  private shouldUsePercentageCoordinates(
+    fields: Array<{ posX?: number; posY?: number }>,
+  ): boolean {
+    return !fields.some((field) => (field.posX ?? 0) > 100 || (field.posY ?? 0) > 100);
+  }
+
+  private toAbsoluteCoordinate(
+    value: number | undefined,
+    size: number,
+    usePercentageCoordinates: boolean,
+  ): number {
+    const safeValue = value ?? 0;
+    return usePercentageCoordinates ? (safeValue / 100) * size : safeValue;
+  }
+
   private toSvgCertificate(
     width: number,
     height: number,
     backgroundUrl: string,
     fields: Array<{
       name?: string;
+      label?: string;
       defaultValue?: string | null;
       posX?: number;
       posY?: number;
@@ -54,13 +101,22 @@ export class CertificatesService {
     }>,
     data: Record<string, unknown>,
   ): string {
+    const usePercentageCoordinates = this.shouldUsePercentageCoordinates(fields);
+
     const textElements = fields
       .map((field) => {
-        const rawValue =
-          (field.name ? data[field.name] : undefined) ?? field.defaultValue ?? '';
+        const rawValue = this.getFieldValue(field, data);
         const textValue = this.escapeXml(String(rawValue));
-        const x = ((field.posX ?? 0) / 100) * width;
-        const y = ((field.posY ?? 0) / 100) * height;
+        const x = this.toAbsoluteCoordinate(
+          field.posX,
+          width,
+          usePercentageCoordinates,
+        );
+        const y = this.toAbsoluteCoordinate(
+          field.posY,
+          height,
+          usePercentageCoordinates,
+        );
         const fontSize = field.fontSize ?? 16;
         const fontFamily = this.escapeXml(field.fontFamily ?? 'Arial');
         const fill = this.escapeXml(field.fontColor ?? '#000000');
@@ -87,6 +143,7 @@ export class CertificatesService {
     height: number,
     fields: Array<{
       name?: string;
+      label?: string;
       defaultValue?: string | null;
       posX?: number;
       posY?: number;
@@ -99,13 +156,22 @@ export class CertificatesService {
     }>,
     data: Record<string, unknown>,
   ): string {
+    const usePercentageCoordinates = this.shouldUsePercentageCoordinates(fields);
+
     const textElements = fields
       .map((field) => {
-        const rawValue =
-          (field.name ? data[field.name] : undefined) ?? field.defaultValue ?? '';
+        const rawValue = this.getFieldValue(field, data);
         const textValue = this.escapeXml(String(rawValue));
-        const x = ((field.posX ?? 0) / 100) * width;
-        const y = ((field.posY ?? 0) / 100) * height;
+        const x = this.toAbsoluteCoordinate(
+          field.posX,
+          width,
+          usePercentageCoordinates,
+        );
+        const y = this.toAbsoluteCoordinate(
+          field.posY,
+          height,
+          usePercentageCoordinates,
+        );
         const fontSize = field.fontSize ?? 16;
         const fontFamily = this.escapeXml(field.fontFamily ?? 'Arial');
         const fill = this.escapeXml(field.fontColor ?? '#000000');
